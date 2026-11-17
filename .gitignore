@@ -1,0 +1,13 @@
+target/
+db.properties
+
+reports/
+.playwright-mcp
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+
+docs/

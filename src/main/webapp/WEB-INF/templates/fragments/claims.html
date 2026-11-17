@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<table>
+    <thead>
+    <tr>
+        <th:block th:fragment="headCells">
+            <th>Claim</th>
+            <th>Employee</th>
+            <th>Expense date</th>
+            <th class="num">Amount (₹)</th>
+        </th:block>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <th:block th:fragment="cells(claim)">
+            <td class="claim-col">
+                <span th:text="|#${claim.id} ${claim.typeName}|">#1 Travel</span>
+                <span class="sub" th:text="${claim.description}">Cab</span>
+                <span class="sub" th:if="${claim.receiptNo}" th:text="|Receipt ${claim.receiptNo}|">Receipt R1</span>
+            </td>
+            <td>
+                <span th:text="${claim.employee.name}">Arjun Singh</span>
+                <span class="sub" th:text="|Sent ${#temporals.format(claim.submittedAt, 'dd MMM, HH:mm')}|">Sent 01 Nov</span>
+                <span class="sub" th:if="${claim.resubmitCount > 0}" th:text="|Resent ${claim.resubmitCount}x|">Resent</span>
+            </td>
+            <td class="date" th:text="${#temporals.format(claim.expenseDate, 'dd MMM yyyy')}">01 Nov 2026</td>
+            <td class="num amount-cell" th:text="${#numbers.formatDecimal(claim.amount, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+        </th:block>
+    </tr>
+    </tbody>
+</table>
+
+<form th:fragment="decision(claim, path)" method="post" th:action="@{${path}}" class="decision">
+    <input type="hidden" name="claimId" th:value="${claim.id}">
+    <input type="text" name="note" maxlength="255" placeholder="Note (needed to reject)"
+           th:attr="aria-label=|Note for claim ${claim.id}|">
+    <button type="submit" name="action" value="approve" class="button small">Approve</button>
+    <button type="submit" name="action" value="reject" class="button small reject">Reject</button>
+</form>
+
+</body>
+</html>

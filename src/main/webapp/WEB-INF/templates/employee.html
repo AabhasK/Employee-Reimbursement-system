@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('My claims')}"></head>
+<body>
+<div class="app">
+    <aside th:replace="~{fragments/layout :: sidebar('employee')}"></aside>
+
+    <main class="main">
+        <div class="page-head">
+            <div>
+                <h1>My claims</h1>
+                <p>Track each claim from submission to payment. Fix a rejected claim and send it again.</p>
+            </div>
+        </div>
+
+        <div th:replace="~{fragments/layout :: messages}"></div>
+
+        <div class="split">
+            <section class="panel">
+                <div class="panel-head">
+                    <h2>Your claims</h2>
+                    <span class="count" th:text="${#lists.size(claims)} + ' total'">0 total</span>
+                </div>
+
+                <div th:if="${#lists.isEmpty(claims)}" class="empty">
+                    <strong>No claims yet</strong>
+                    Use the form to submit your first expense.
+                </div>
+
+                <div th:unless="${#lists.isEmpty(claims)}" class="table-wrap">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>Claim</th>
+                            <th>Expense date</th>
+                            <th class="num">Amount (₹)</th>
+                            <th>Progress</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="claim : ${claims}">
+                            <td class="claim-col">
+                                <span th:text="|#${claim.id} ${claim.typeName}|">#1 Travel</span>
+                                <span class="sub" th:text="${claim.description}">Cab to client office</span>
+                                <span class="sub" th:if="${claim.receiptNo}" th:text="|Receipt ${claim.receiptNo}|">Receipt R1</span>
+                            </td>
+                            <td class="date" th:text="${#temporals.format(claim.expenseDate, 'dd MMM yyyy')}">01 Nov 2026</td>
+                            <td class="num amount-cell" th:text="${#numbers.formatDecimal(claim.amount, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                            <td>
+                                <span th:replace="~{fragments/layout :: track(${claim.status})}"></span>
+                                <span class="sub" th:if="${claim.rejectReason}" th:text="${claim.rejectReason}">Reason</span>
+                                <span class="sub" th:if="${claim.resubmitCount > 0}"
+                                      th:text="|Sent again ${claim.resubmitCount} time${claim.resubmitCount > 1 ? 's' : ''}|">Sent again</span>
+                                <a th:if="${claim.status.name() == 'REJECTED'}" th:href="@{/employee(edit=${claim.id})}"
+                                   class="button small quiet row-action">Fix and resend</a>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="panel form-panel">
+                <div class="panel-head">
+                    <h2 th:text="${form.editing} ? |Fix claim #${form.claimId}| : 'New claim'">New claim</h2>
+                </div>
+                <div class="panel-body">
+                    <p th:if="${rejectReason}" class="reject-note" th:text="|Rejected: ${rejectReason}|">Rejected</p>
+
+                    <form method="post" th:action="@{/employee}">
+                        <input type="hidden" name="claimId" th:value="${form.claimId}">
+
+                        <div class="field">
+                            <label for="type">Expense type</label>
+                            <select id="type" name="type" th:disabled="${form.editing}">
+                                <option th:each="t : ${types}" th:value="${t}"
+                                        th:text="${t.charAt(0) + t.substring(1).toLowerCase()}"
+                                        th:selected="${t == form.type}">Travel</option>
+                            </select>
+                            <input th:if="${form.editing}" type="hidden" name="type" th:value="${form.type}">
+                        </div>
+
+                        <div class="row-2">
+                            <div class="field">
+                                <label for="amount">Amount (₹)</label>
+                                <input id="amount" name="amount" type="text" inputmode="decimal" placeholder="1250.50"
+                                       th:value="${form.amount}">
+                            </div>
+                            <div class="field">
+                                <label for="expenseDate">Date</label>
+                                <input id="expenseDate" name="expenseDate" type="date" th:value="${form.expenseDate}"
+                                       th:max="${today}">
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label for="receiptNo">Receipt number</label>
+                            <input id="receiptNo" name="receiptNo" type="text" maxlength="50" th:value="${form.receiptNo}">
+                        </div>
+
+                        <div class="field">
+                            <label for="description">What was it for?</label>
+                            <input id="description" name="description" type="text" maxlength="255"
+                                   placeholder="Cab to client office" th:value="${form.description}">
+                        </div>
+
+                        <div class="actions">
+                            <button type="submit" class="button full"
+                                    th:text="${form.editing} ? 'Send again' : 'Submit claim'">Submit claim</button>
+                            <a th:if="${form.editing}" th:href="@{/employee}" class="button quiet">Cancel</a>
+                        </div>
+                    </form>
+
+                    <div class="rules">
+                        <dl>
+                            <dt>Travel</dt><dd>Up to ₹25,000. Receipt above ₹1,000.</dd>
+                            <dt>Medical</dt><dd>Up to ₹50,000. Receipt always.</dd>
+                            <dt>Food</dt><dd>Up to ₹2,000. Receipt above ₹500.</dd>
+                            <dt>Date</dt><dd>Within the last 60 days.</dd>
+                        </dl>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+</body>
+</html>

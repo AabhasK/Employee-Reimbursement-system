@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Reports')}"></head>
+<body>
+<div class="app">
+    <aside th:replace="~{fragments/layout :: sidebar('reports')}"></aside>
+
+    <main class="main">
+        <div class="page-head">
+            <div>
+                <h1>Reports</h1>
+                <p th:text="${currentUser.role.name() == 'FINANCE'} ? 'Every claim in the company, with totals for each status.'
+                        : 'Claims from your team, with totals for each status.'">Claims with totals for each status.</p>
+            </div>
+            <div class="toolbar">
+                <form method="get" th:action="@{/reports}">
+                    <label for="sort">Sort by</label>
+                    <select id="sort" name="sort">
+                        <option th:each="s : ${sorts}" th:value="${s.name()}" th:text="${s}"
+                                th:selected="${s == sort}">Newest first</option>
+                    </select>
+                    <button type="submit" class="button quiet">Apply</button>
+                </form>
+                <a class="button" th:href="@{/reports/download(sort=${sort.name()})}">Download summary</a>
+            </div>
+        </div>
+
+        <div th:replace="~{fragments/layout :: messages}"></div>
+
+        <section th:if="${counts}" class="panel ledger-summary" aria-label="Totals by status">
+            <div th:each="entry : ${counts}">
+                <div class="label" th:switch="${entry.key.name()}">
+                    <th:block th:case="'SUBMITTED'">Waiting</th:block>
+                    <th:block th:case="'APPROVED'">Approved, not paid</th:block>
+                    <th:block th:case="'REJECTED'">Rejected</th:block>
+                    <th:block th:case="'REIMBURSED'">Paid</th:block>
+                </div>
+                <div class="money" th:text="'₹' + ${#numbers.formatDecimal(totals.get(entry.key), 1, 'COMMA', 2, 'POINT')}">₹0.00</div>
+                <div class="claims" th:text="${entry.value} + (${entry.value == 1} ? ' claim' : ' claims')">0 claims</div>
+            </div>
+            <div>
+                <div class="label">All claims</div>
+                <div class="money" th:text="'₹' + ${#numbers.formatDecimal(#aggregates.sum(totals.values()), 1, 'COMMA', 2, 'POINT')}">₹0.00</div>
+                <div class="claims" th:text="${#lists.size(claims)} + (${#lists.size(claims) == 1} ? ' claim' : ' claims')">0 claims</div>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-head">
+                <h2 th:text="${sort}">Newest first</h2>
+                <span class="count" th:text="${#lists.size(claims)} + (${#lists.size(claims) == 1} ? ' claim' : ' claims')">0 claims</span>
+            </div>
+
+            <div th:if="${#lists.isEmpty(claims)}" class="empty">
+                <strong>No claims to report</strong>
+                Claims show up here once they are submitted.
+            </div>
+
+            <div th:unless="${#lists.isEmpty(claims)}" class="table-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th:block th:replace="~{fragments/claims :: headCells}"></th:block>
+                        <th>Progress</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="claim : ${claims}">
+                        <th:block th:replace="~{fragments/claims :: cells(${claim})}"></th:block>
+                        <td><span th:replace="~{fragments/layout :: track(${claim.status})}"></span></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Approvals and payments')}"></head>
+<body>
+<div class="app">
+    <aside th:replace="~{fragments/layout :: sidebar('finance')}"></aside>
+
+    <main class="main">
+        <div class="page-head">
+            <div>
+                <h1>Approvals and payments</h1>
+                <p>Give the second approval on high value claims, then pay approved claims.</p>
+            </div>
+        </div>
+
+        <div th:replace="~{fragments/layout :: messages}"></div>
+
+        <section class="panel">
+            <div class="panel-head">
+                <h2 th:text="|Above ₹${#numbers.formatInteger(financeThreshold, 1, 'COMMA')}, approved by the manager|">Second approval</h2>
+                <span class="count" th:text="${#lists.size(pending)} + (${#lists.size(pending) == 1} ? ' claim' : ' claims')">0 claims</span>
+            </div>
+
+            <div th:if="${#lists.isEmpty(pending)}" class="empty">
+                <strong>No claims need a second approval</strong>
+                High value claims appear here once a manager approves them.
+            </div>
+
+            <div th:unless="${#lists.isEmpty(pending)}" class="table-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th:block th:replace="~{fragments/claims :: headCells}"></th:block>
+                        <th>Decision</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="claim : ${pending}">
+                        <th:block th:replace="~{fragments/claims :: cells(${claim})}"></th:block>
+                        <td><form th:replace="~{fragments/claims :: decision(${claim}, '/finance')}"></form></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-head">
+                <h2>Approved, waiting for payment</h2>
+                <span class="count" th:text="${#lists.size(ready)} + (${#lists.size(ready) == 1} ? ' claim' : ' claims')">0 claims</span>
+            </div>
+
+            <div th:if="${#lists.isEmpty(ready)}" class="empty">
+                <strong>Nothing to pay right now</strong>
+                Approved claims appear here.
+            </div>
+
+            <div th:unless="${#lists.isEmpty(ready)}" class="table-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th:block th:replace="~{fragments/claims :: headCells}"></th:block>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="claim : ${ready}">
+                        <th:block th:replace="~{fragments/claims :: cells(${claim})}"></th:block>
+                        <td>
+                            <form method="post" th:action="@{/finance}" class="decision">
+                                <input type="hidden" name="claimId" th:value="${claim.id}">
+                                <button type="submit" name="action" value="reimburse" class="button small">Mark as paid</button>
+                            </form>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+</div>
+</body>
+</html>

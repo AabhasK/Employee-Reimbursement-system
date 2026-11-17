@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head th:fragment="head(title)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${title} + ' - Expense Claims'">Expense Claims</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+
+<body>
+
+<aside th:fragment="sidebar(active)" class="sidebar">
+    <a class="wordmark" th:href="@{/}">
+        <span class="wordmark-mark">EC</span>
+        Expense Claims
+    </a>
+    <nav class="side-nav" aria-label="Main">
+        <a th:if="${currentUser.role.name() == 'EMPLOYEE'}" th:href="@{/employee}"
+           th:classappend="${active == 'employee'} ? 'active'">My claims</a>
+        <a th:if="${currentUser.role.name() == 'MANAGER'}" th:href="@{/manager}"
+           th:classappend="${active == 'manager'} ? 'active'">Team approvals</a>
+        <a th:if="${currentUser.role.name() == 'FINANCE'}" th:href="@{/finance}"
+           th:classappend="${active == 'finance'} ? 'active'">Approvals and payments</a>
+        <a th:if="${currentUser.role.name() != 'EMPLOYEE'}" th:href="@{/reports}"
+           th:classappend="${active == 'reports'} ? 'active'">Reports</a>
+    </nav>
+    <div class="user-card">
+        <div>
+            <div class="name" th:text="${currentUser.name}">Name</div>
+            <div class="role" th:text="${currentUser.role.name() == 'EMPLOYEE'} ? 'Employee'
+                    : (${currentUser.role.name() == 'MANAGER'} ? 'Manager' : 'Finance')">Employee</div>
+        </div>
+        <form method="post" th:action="@{/logout}">
+            <button type="submit" class="signout">Sign out</button>
+        </form>
+    </div>
+</aside>
+
+<div th:fragment="messages">
+    <p th:if="${flash}" class="message success" role="status" th:text="${flash}">Saved</p>
+    <p th:if="${flashError}" class="message error" role="alert" th:text="${flashError}">Problem</p>
+    <p th:if="${error}" class="message error" role="alert" th:text="${error}">Problem</p>
+</div>
+
+<span th:fragment="track(status)" class="track" th:classappend="${status}">
+    <span class="track-bar" aria-hidden="true"><i></i><i></i><i></i></span>
+    <span class="track-label" th:switch="${status.name()}">
+        <th:block th:case="'SUBMITTED'">Waiting for approval</th:block>
+        <th:block th:case="'APPROVED'">Approved, not paid</th:block>
+        <th:block th:case="'REIMBURSED'">Paid</th:block>
+        <th:block th:case="'REJECTED'">Rejected</th:block>
+    </span>
+</span>
+
+</body>
+</html>
