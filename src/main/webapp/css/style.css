@@ -786,3 +786,38 @@ td.claim-col {
 .row-action {
     margin-top: 8px;
 }
+
+/* Error pages */
+
+.error-shell {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 24px 16px;
+}
+
+.error-card {
+    max-width: 460px;
+    padding: 32px;
+}
+
+.main .error-card {
+    margin: 48px auto 0;
+}
+
+.error-code {
+    margin: 0 0 4px;
+    font-size: 0.93rem;
+    font-weight: 600;
+    color: var(--muted);
+}
+
+.error-card h1 {
+    font-size: 1.47rem;
+    font-weight: 600;
+}
+
+.error-card p:not(.error-code) {
+    color: var(--muted);
+    margin: 8px 0 24px;
+}

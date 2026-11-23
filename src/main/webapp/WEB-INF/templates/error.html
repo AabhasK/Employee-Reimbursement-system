@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${errorTitle})}"></head>
+<body>
+<div th:class="${currentUser != null} ? 'app' : 'error-shell'">
+    <th:block th:if="${currentUser != null}">
+        <aside th:replace="~{fragments/layout :: sidebar('')}"></aside>
+    </th:block>
+
+    <main th:class="${currentUser != null} ? 'main' : ''">
+        <section class="panel error-card">
+            <p class="error-code" th:text="${statusCode}">404</p>
+            <h1 th:text="${errorTitle}">Page not found</h1>
+            <p th:text="${errorMessage}">The address may be mistyped, or the page does not exist.</p>
+            <a class="button" th:href="@{/}"
+               th:text="${currentUser != null} ? 'Back to my page' : 'Go to sign in'">Back to my page</a>
+        </section>
+    </main>
+</div>
+</body>
+</html>

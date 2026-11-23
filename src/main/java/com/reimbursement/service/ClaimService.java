@@ -62,10 +62,6 @@ public class ClaimService {
         return claimDAO.findByEmployee(employee.getId());
     }
 
-    public List<AuditEntry> findHistory(Claim claim) throws DataAccessException {
-        return auditDAO.findByClaim(claim.getId());
-    }
-
     private void cleanReceipt(Claim claim) {
         String receipt = claim.getReceiptNo();
         if (receipt == null || receipt.isBlank()) {

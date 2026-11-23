@@ -4,6 +4,16 @@ A web app for submitting and approving employee expense claims, built for UCS553
 
 Employees submit travel, medical and food claims. Each type checks its own limit and receipt rules. Managers approve claims of their team, claims above Rs 5000 also need finance, and finance marks approved claims as reimbursed. Rejected claims can be fixed and resubmitted.
 
+## Features
+
+- Login with a separate home page for employees, managers and finance. A filter stops each role from opening the others' pages.
+- Claim lifecycle: submitted, approved, rejected, reimbursed. A rejected claim can be fixed and sent again.
+- Manager approval, plus a second approval by finance for claims above Rs 5000.
+- Self approval, duplicate receipts and claims above the limit are blocked with clear messages.
+- Every status change is saved in an audit table.
+- Reports sorted by date, amount or status, with totals for each status and a downloadable summary file.
+- Styled error pages for 403, 404, 405 and 500.
+
 ## Tech used
 
 Java 21, Servlets, Thymeleaf, embedded Apache Tomcat, MySQL, JDBC, JUnit 5, Maven.
@@ -20,6 +30,8 @@ The expense date cannot be in the future or older than 60 days. A receipt number
 
 ## Setup
 
+You need Java 21, Maven and MySQL 8 running (on Windows the service is `MySQL80`).
+
 1. Load the database (it creates `reimbursement_db` with sample users):
    ```
    & "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" -u root -p -e "source sql/schema.sql"
@@ -29,7 +41,7 @@ The expense date cannot be in the future or older than 60 days. A receipt number
    ```
    mvn compile exec:exec
    ```
-4. Run the tests:
+4. Run the 107 tests. The 11 database tests need MySQL running:
    ```
    mvn test
    ```
@@ -56,6 +68,6 @@ src/main/java/com/reimbursement
   service      claim, approval, login and report logic
   web          servlets, Thymeleaf setup, messages
   util         AppContext, ReportWriter
-src/main/webapp     Thymeleaf templates (WEB-INF/templates) and CSS
+src/main/webapp     Thymeleaf templates (WEB-INF/templates), web.xml and CSS
 sql/schema.sql      tables and sample data
 ```

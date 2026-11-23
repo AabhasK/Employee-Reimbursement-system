@@ -25,10 +25,6 @@ public class AppContext {
     private AppContext() {
     }
 
-    public static EmployeeDAO getEmployeeDAO() {
-        return employeeDAO;
-    }
-
     public static LoginService getLoginService() {
         return loginService;
     }
