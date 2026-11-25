@@ -15,6 +15,10 @@ public class DBConnection {
     }
 
     public static Connection getConnection() throws SQLException {
+        String envUrl = System.getenv("APP_DB_URL");
+        if (envUrl != null && !envUrl.isBlank()) {
+            return DriverManager.getConnection(envUrl, System.getenv("APP_DB_USER"), System.getenv("APP_DB_PASSWORD"));
+        }
         Properties settings = loadSettings();
         String url = settings.getProperty("db.url");
         String user = settings.getProperty("db.user");
@@ -27,7 +31,7 @@ public class DBConnection {
         try (FileReader reader = new FileReader(CONFIG_FILE)) {
             settings.load(reader);
         } catch (IOException e) {
-            throw new SQLException("Could not read " + CONFIG_FILE + ". Copy db.properties.example and fill it in.", e);
+            throw new SQLException("Could not read " + CONFIG_FILE + ". See the database setup in README.md.", e);
         }
         return settings;
     }

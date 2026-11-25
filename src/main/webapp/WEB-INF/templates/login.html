@@ -2,29 +2,49 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/layout :: head('Sign in')}"></head>
 <body>
+<svg th:replace="~{fragments/layout :: icons}"></svg>
 <div class="login">
     <section class="login-story">
         <div>
-            <a class="wordmark" th:href="@{/login}">
-                <span class="wordmark-mark">EC</span>
-                Expense Claims
-            </a>
-            <h1>Get your work expenses paid back</h1>
-            <p>Submit travel, medical and food expenses with the receipt number. Your manager and the finance team approve them here.</p>
+            <div class="login-brands">
+                <div class="brand-block">
+                    <img class="company-logo" th:src="@{${universityLogo}}" alt="" width="40" height="40">
+                    <span>
+                        <span class="company-name" th:text="${universityName}">Thapar University</span>
+                        <span class="app-name">@thapar.edu</span>
+                    </span>
+                </div>
+                <div class="brand-block" th:if="${demoEnabled}">
+                    <img class="company-logo" th:src="@{${companyLogo}}" alt="" width="40" height="40">
+                    <span>
+                        <span class="company-name" th:text="${companyName}">Company</span>
+                        <span class="app-name">@company.com demo</span>
+                    </span>
+                </div>
+            </div>
+            <h1>Spend it for work. Get it back without the chase.</h1>
+            <p class="lead">Submit travel, medical and food expenses with the receipt number. Your manager and finance approve them here, and you can see where every claim is.</p>
 
-            <ol class="journey">
-                <li><div><strong>You submit a claim</strong><span>Each type has its own limit and receipt rule.</span></div></li>
-                <li><div><strong>Your manager approves it</strong><span>Claims above Rs 5,000 also go to finance.</span></div></li>
-                <li><div><strong>Finance pays you</strong><span>The claim is marked as paid.</span></div></li>
-            </ol>
+            <div class="sample-claim" aria-hidden="true">
+                <div class="top">
+                    <strong>Flight to Bengaluru</strong>
+                    <strong class="num">₹7,200.00</strong>
+                </div>
+                <div class="meta">Travel claim, approved by your manager</div>
+                <span class="track FINANCE">
+                    <span class="track-bar"><i></i><i></i><i></i></span>
+                    <span class="track-label">With finance</span>
+                    <span class="steps"><span>Submitted</span><span>Approved</span><span>Paid</span></span>
+                </span>
+            </div>
         </div>
-        <p class="login-foot">If a claim is rejected, you can fix it and send it again.</p>
+        <p class="login-foot">Claims above ₹5,000 also need a second approval from finance.</p>
     </section>
 
     <main class="login-form">
         <div class="box">
             <h2>Sign in</h2>
-            <p>Use your company email.</p>
+            <p th:text="${demoEnabled} ? 'Use your Thapar University or Company demo email.' : 'Use your Thapar University email.'">Use your Thapar University email.</p>
 
             <div th:replace="~{fragments/layout :: messages}"></div>
 
@@ -40,6 +60,7 @@
                 </div>
                 <button type="submit" class="button full">Sign in</button>
             </form>
+            <p><a th:href="@{/signup}">Create a Thapar student account</a></p>
         </div>
     </main>
 </div>

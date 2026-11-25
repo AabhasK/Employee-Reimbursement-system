@@ -25,6 +25,7 @@ public abstract class Claim {
     private LocalDateTime submittedAt;
     private String rejectReason;
     private int resubmitCount;
+    private boolean proofChecked;
 
     protected Claim(Employee employee, BigDecimal amount, LocalDate expenseDate, String receiptNo,
             String description) {
@@ -43,6 +44,28 @@ public abstract class Claim {
     public abstract String getType();
 
     public abstract BigDecimal getLimit();
+
+    public boolean needsProof() {
+        BigDecimal threshold = getProofAbove();
+        return threshold != null && (threshold.signum() == 0
+                || (amount != null && amount.compareTo(threshold) > 0));
+    }
+
+    public BigDecimal getProofAbove() {
+        return BigDecimal.ZERO;
+    }
+
+    public ProofKind getReceiptKind() {
+        return ProofKind.forClaimType(getType());
+    }
+
+    public boolean allowsApprovalLetter() {
+        return isStudent() && (getType().equals("TRAVEL") || getType().equals("EVENT"));
+    }
+
+    protected boolean isStudent() {
+        return employee.getGrade() == Grade.STUDENT;
+    }
 
     protected void checkCommonRules() throws ReimbursementException {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
@@ -68,8 +91,9 @@ public abstract class Claim {
             throw new ReimbursementException("Expense date is older than " + MAX_AGE_DAYS + " days");
         }
         if (amount.compareTo(getLimit()) > 0) {
-            throw new ClaimLimitExceededException(getTypeName() + " claims can be at most Rs " + getLimit()
-                    + ". This one is Rs " + amount.toPlainString());
+            String who = isStudent() ? "For students, " : "For staff, ";
+            throw new ClaimLimitExceededException(who + getTypeName().toLowerCase() + " claims can be at most Rs "
+                    + getLimit() + ". This one is Rs " + amount.toPlainString());
         }
     }
 
@@ -95,6 +119,24 @@ public abstract class Claim {
     public String getTypeName() {
         String type = getType();
         return type.charAt(0) + type.substring(1).toLowerCase();
+    }
+
+    public String getFormName() {
+        if (isStudent() || employee.isUniversity()) {
+            return switch (getType()) {
+                case "TRAVEL" -> "Student travel";
+                case "ACCOMMODATION" -> "Student accommodation";
+                case "EVENT" -> "Academic events and materials";
+                default -> getTypeName();
+            };
+        }
+        return switch (getType()) {
+            case "TRAVEL" -> "Business travel";
+            case "ACCOMMODATION" -> "Business lodging";
+            case "FOOD" -> "Business meals";
+            case "LOCAL" -> "Local business transport";
+            default -> getTypeName();
+        };
     }
 
     public int getId() {
@@ -171,6 +213,14 @@ public abstract class Claim {
 
     public void setResubmitCount(int resubmitCount) {
         this.resubmitCount = resubmitCount;
+    }
+
+    public boolean isProofChecked() {
+        return proofChecked;
+    }
+
+    public void setProofChecked(boolean proofChecked) {
+        this.proofChecked = proofChecked;
     }
 
     @Override

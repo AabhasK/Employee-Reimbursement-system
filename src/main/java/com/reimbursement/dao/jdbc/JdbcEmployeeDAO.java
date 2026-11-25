@@ -15,6 +15,7 @@ import com.reimbursement.dao.DBConnection;
 import com.reimbursement.dao.EmployeeDAO;
 import com.reimbursement.exception.DataAccessException;
 import com.reimbursement.model.Employee;
+import com.reimbursement.model.Grade;
 import com.reimbursement.model.Role;
 
 public class JdbcEmployeeDAO implements EmployeeDAO {
@@ -72,7 +73,8 @@ public class JdbcEmployeeDAO implements EmployeeDAO {
                 rs.getString("email"),
                 rs.getString("password_hash"),
                 Role.valueOf(rs.getString("role")),
-                rs.getObject("manager_id", Integer.class));
+                rs.getObject("manager_id", Integer.class),
+                Grade.valueOf(rs.getString("grade")));
         cache.put(employee.getId(), employee);
         return employee;
     }

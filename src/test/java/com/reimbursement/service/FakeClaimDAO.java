@@ -63,9 +63,10 @@ class FakeClaimDAO implements ClaimDAO {
     }
 
     @Override
-    public boolean isReceiptUsed(String receiptNo, int ignoreClaimId) {
+    public boolean isReceiptUsed(String receiptNo, int ignoreClaimId, boolean university) {
         for (Claim claim : claims.values()) {
-            if (claim.getId() != ignoreClaimId && receiptNo.equals(claim.getReceiptNo())) {
+            if (claim.getId() != ignoreClaimId && receiptNo.equals(claim.getReceiptNo())
+                    && claim.getEmployee().isUniversity() == university) {
                 return true;
             }
         }

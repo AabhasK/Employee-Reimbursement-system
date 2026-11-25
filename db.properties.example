@@ -1,0 +1,3 @@
+db.url=jdbc:mysql://localhost:3306/reimbursement_db
+db.user=root
+db.password=replace_with_your_mysql_password

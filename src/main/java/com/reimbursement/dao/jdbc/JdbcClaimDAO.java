@@ -25,11 +25,11 @@ import com.reimbursement.model.Employee;
 public class JdbcClaimDAO implements ClaimDAO {
 
     private static final String INSERT_SQL = "INSERT INTO claims (employee_id, type, amount, expense_date, "
-            + "receipt_no, description, status, reject_reason, resubmit_count, submitted_at) "
-            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            + "receipt_no, description, status, reject_reason, resubmit_count, submitted_at, university) "
+            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     private static final String UPDATE_SQL = "UPDATE claims SET amount = ?, expense_date = ?, receipt_no = ?, "
-            + "description = ?, status = ?, reject_reason = ?, resubmit_count = ? WHERE id = ?";
+            + "description = ?, status = ?, reject_reason = ?, resubmit_count = ?, proof_checked = ? WHERE id = ?";
 
     private final EmployeeDAO employeeDAO;
 
@@ -51,6 +51,7 @@ public class JdbcClaimDAO implements ClaimDAO {
             ps.setString(8, claim.getRejectReason());
             ps.setInt(9, claim.getResubmitCount());
             ps.setTimestamp(10, Timestamp.valueOf(claim.getSubmittedAt()));
+            ps.setBoolean(11, claim.getEmployee().isUniversity());
             ps.executeUpdate();
 
             try (ResultSet keys = ps.getGeneratedKeys()) {
@@ -75,7 +76,8 @@ public class JdbcClaimDAO implements ClaimDAO {
             ps.setString(5, claim.getStatus().name());
             ps.setString(6, claim.getRejectReason());
             ps.setInt(7, claim.getResubmitCount());
-            ps.setInt(8, claim.getId());
+            ps.setBoolean(8, claim.isProofChecked());
+            ps.setInt(9, claim.getId());
             rows = ps.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException("Could not update claim " + claim.getId(), e);
@@ -110,12 +112,13 @@ public class JdbcClaimDAO implements ClaimDAO {
     }
 
     @Override
-    public boolean isReceiptUsed(String receiptNo, int ignoreClaimId) throws DataAccessException {
-        String sql = "SELECT COUNT(*) FROM claims WHERE receipt_no = ? AND id <> ?";
+    public boolean isReceiptUsed(String receiptNo, int ignoreClaimId, boolean university) throws DataAccessException {
+        String sql = "SELECT COUNT(*) FROM claims WHERE receipt_no = ? AND id <> ? AND university = ?";
         try (Connection con = DBConnection.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, receiptNo);
             ps.setInt(2, ignoreClaimId);
+            ps.setBoolean(3, university);
             try (ResultSet rs = ps.executeQuery()) {
                 rs.next();
                 return rs.getInt(1) > 0;
@@ -159,6 +162,7 @@ public class JdbcClaimDAO implements ClaimDAO {
         claim.setStatus(ClaimStatus.valueOf(rs.getString("status")));
         claim.setRejectReason(rs.getString("reject_reason"));
         claim.setResubmitCount(rs.getInt("resubmit_count"));
+        claim.setProofChecked(rs.getBoolean("proof_checked"));
         claim.setSubmittedAt(rs.getTimestamp("submitted_at").toLocalDateTime());
         return claim;
     }

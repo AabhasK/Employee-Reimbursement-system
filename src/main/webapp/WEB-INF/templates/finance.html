@@ -2,6 +2,7 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/layout :: head('Approvals and payments')}"></head>
 <body>
+<svg th:replace="~{fragments/layout :: icons}"></svg>
 <div class="app">
     <aside th:replace="~{fragments/layout :: sidebar('finance')}"></aside>
 
@@ -15,6 +16,19 @@
 
         <div th:replace="~{fragments/layout :: messages}"></div>
 
+        <section class="summary" style="--cols: 2" aria-label="Your queues">
+            <div>
+                <div class="label"><span class="dot FINANCE"></span>Need your approval</div>
+                <div class="money" th:text="'₹' + ${#numbers.formatDecimal(pendingTotal, 1, 'COMMA', 2, 'POINT')}">₹0.00</div>
+                <div class="sub" th:text="${#lists.size(pending)} + (${#lists.size(pending) == 1} ? ' claim' : ' claims')">0 claims</div>
+            </div>
+            <div>
+                <div class="label"><span class="dot APPROVED"></span>Ready to pay</div>
+                <div class="money" th:text="'₹' + ${#numbers.formatDecimal(readyTotal != null ? readyTotal : 0, 1, 'COMMA', 2, 'POINT')}">₹0.00</div>
+                <div class="sub" th:text="${#lists.size(ready)} + (${#lists.size(ready) == 1} ? ' claim' : ' claims')">0 claims</div>
+            </div>
+        </section>
+
         <section class="panel">
             <div class="panel-head">
                 <h2 th:text="|Above ₹${#numbers.formatInteger(financeThreshold, 1, 'COMMA')}, approved by the manager|">Second approval</h2>
@@ -22,6 +36,7 @@
             </div>
 
             <div th:if="${#lists.isEmpty(pending)}" class="empty">
+                <svg class="icon"><use href="#i-check"/></svg>
                 <strong>No claims need a second approval</strong>
                 High value claims appear here once a manager approves them.
             </div>
@@ -36,8 +51,8 @@
                     </thead>
                     <tbody>
                     <tr th:each="claim : ${pending}">
-                        <th:block th:replace="~{fragments/claims :: cells(${claim})}"></th:block>
-                        <td><form th:replace="~{fragments/claims :: decision(${claim}, '/finance')}"></form></td>
+                        <th:block th:replace="~{fragments/claims :: cells(${claim}, ${proofs != null ? proofs.get(claim.id) : null})}"></th:block>
+                        <td><form th:replace="~{fragments/claims :: decision(${claim}, '/finance', ${proofs != null ? proofs.get(claim.id) : null})}"></form></td>
                     </tr>
                     </tbody>
                 </table>
@@ -51,6 +66,7 @@
             </div>
 
             <div th:if="${#lists.isEmpty(ready)}" class="empty">
+                <svg class="icon"><use href="#i-wallet"/></svg>
                 <strong>Nothing to pay right now</strong>
                 Approved claims appear here.
             </div>
@@ -65,11 +81,12 @@
                     </thead>
                     <tbody>
                     <tr th:each="claim : ${ready}">
-                        <th:block th:replace="~{fragments/claims :: cells(${claim})}"></th:block>
+                        <th:block th:replace="~{fragments/claims :: cells(${claim}, ${readyProofs != null ? readyProofs.get(claim.id) : null})}"></th:block>
                         <td>
                             <form method="post" th:action="@{/finance}" class="decision">
                                 <input type="hidden" name="claimId" th:value="${claim.id}">
-                                <button type="submit" name="action" value="reimburse" class="button small">Mark as paid</button>
+                                <button type="submit" name="action" value="reimburse" class="button small">
+                                    <svg class="icon"><use href="#i-wallet"/></svg>Mark as paid</button>
                             </form>
                         </td>
                     </tr>

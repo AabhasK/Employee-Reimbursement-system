@@ -43,7 +43,10 @@ class AuthFilterTest {
     @Test
     void onlyLoginAndStylesArePublic() {
         assertTrue(AuthFilter.isPublic("/login"));
+        assertTrue(AuthFilter.isPublic("/signup"));
         assertTrue(AuthFilter.isPublic("/css/style.css"));
+        assertTrue(AuthFilter.isPublic("/images/company-logo.svg"));
+        assertFalse(AuthFilter.isPublic("/proof"));
         assertFalse(AuthFilter.isPublic("/employee"));
         assertFalse(AuthFilter.isPublic("/logout"));
     }

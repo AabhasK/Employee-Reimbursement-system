@@ -2,6 +2,7 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/layout :: head(${errorTitle})}"></head>
 <body>
+<svg th:replace="~{fragments/layout :: icons}"></svg>
 <div th:class="${currentUser != null} ? 'app' : 'error-shell'">
     <th:block th:if="${currentUser != null}">
         <aside th:replace="~{fragments/layout :: sidebar('')}"></aside>
@@ -9,11 +10,13 @@
 
     <main th:class="${currentUser != null} ? 'main' : ''">
         <section class="panel error-card">
-            <p class="error-code" th:text="${statusCode}">404</p>
+            <p class="error-code" th:text="|Error ${statusCode}|">Error 404</p>
             <h1 th:text="${errorTitle}">Page not found</h1>
             <p th:text="${errorMessage}">The address may be mistyped, or the page does not exist.</p>
-            <a class="button" th:href="@{/}"
-               th:text="${currentUser != null} ? 'Back to my page' : 'Go to sign in'">Back to my page</a>
+            <a class="button" th:href="@{/}">
+                <span th:text="${currentUser != null} ? 'Back to my page' : 'Go to sign in'">Back to my page</span>
+                <svg class="icon"><use href="#i-arrow"/></svg>
+            </a>
         </section>
     </main>
 </div>

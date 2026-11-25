@@ -29,6 +29,7 @@ import com.reimbursement.model.AuditEntry;
 import com.reimbursement.model.Claim;
 import com.reimbursement.model.ClaimStatus;
 import com.reimbursement.model.Employee;
+import com.reimbursement.model.EquipmentClaim;
 import com.reimbursement.model.FoodClaim;
 import com.reimbursement.model.TravelClaim;
 
@@ -86,6 +87,18 @@ class JdbcClaimDAOTest {
     }
 
     @Test
+    void equipmentClaimRoundTripsWithInvoiceNumber() throws DataAccessException {
+        Claim equipment = new EquipmentClaim(arjun, new BigDecimal("12000"), LocalDate.now(),
+                uniqueReceipt(), "Desktop monitor");
+        save(equipment);
+
+        Claim loaded = claimDAO.findById(equipment.getId()).orElseThrow();
+        assertInstanceOf(EquipmentClaim.class, loaded);
+        assertEquals(equipment.getReceiptNo(), loaded.getReceiptNo());
+        assertEquals("Desktop monitor", loaded.getDescription());
+    }
+
+    @Test
     void updateChangesStatusAndReason() throws DataAccessException {
         Claim claim = new FoodClaim(arjun, new BigDecimal("300"), LocalDate.now(), null, "Snacks");
         save(claim);
@@ -105,8 +118,9 @@ class JdbcClaimDAOTest {
         Claim claim = new TravelClaim(arjun, new BigDecimal("2000"), LocalDate.now(), receipt, "Flight");
         save(claim);
 
-        assertTrue(claimDAO.isReceiptUsed(receipt, 0));
-        assertFalse(claimDAO.isReceiptUsed(receipt, claim.getId()));
+        assertTrue(claimDAO.isReceiptUsed(receipt, 0, false));
+        assertFalse(claimDAO.isReceiptUsed(receipt, claim.getId(), false));
+        assertFalse(claimDAO.isReceiptUsed(receipt, 0, true));
     }
 
     @Test

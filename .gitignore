@@ -2,7 +2,8 @@ target/
 db.properties
 
 reports/
-.playwright-mcp
+uploads/
+.playwright-mcp/
 .idea/
 *.iml
 .vscode/

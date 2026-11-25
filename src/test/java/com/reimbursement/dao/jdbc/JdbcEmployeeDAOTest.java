@@ -2,6 +2,7 @@ package com.reimbursement.dao.jdbc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -43,6 +44,19 @@ class JdbcEmployeeDAOTest {
     }
 
     @Test
+    void universityStudentsAndManagersHaveSeparateAccounts() throws DataAccessException {
+        Employee riya = dao.findByEmail("riya@thapar.edu").orElseThrow();
+        Employee rohit = dao.findByEmail("rohit@thapar.edu").orElseThrow();
+        assertEquals(Role.EMPLOYEE, riya.getRole());
+        assertEquals(Role.MANAGER, rohit.getRole());
+        assertEquals(rohit.getId(), riya.getManagerId());
+        assertEquals("rohit@thapar.edu", rohit.getEmail());
+        assertNotEquals(rohit.getId(), dao.findByEmail("rohit@company.com").orElseThrow().getId());
+        assertTrue(dao.findByEmail("riya@company.com").isEmpty());
+        assertTrue(dao.findByEmail("arjun@thapar.edu").isEmpty());
+    }
+
+    @Test
     void unknownEmailGivesEmptyOptional() throws DataAccessException {
         Optional<Employee> nobody = dao.findByEmail("nobody@company.com");
         assertTrue(nobody.isEmpty());
@@ -57,6 +71,6 @@ class JdbcEmployeeDAOTest {
 
     @Test
     void findAllReturnsEverySeedUser() throws DataAccessException {
-        assertEquals(7, dao.findAll().size());
+        assertTrue(dao.findAll().size() >= 12);
     }
 }

@@ -2,10 +2,13 @@ package com.reimbursement.service;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.reimbursement.dao.AuditDAO;
 import com.reimbursement.dao.ClaimDAO;
+import com.reimbursement.dao.ProofDAO;
 import com.reimbursement.exception.DataAccessException;
 import com.reimbursement.exception.InvalidClaimStateException;
 import com.reimbursement.exception.ReimbursementException;
@@ -23,14 +26,22 @@ public class ApprovalService implements Approvable {
 
     private final ClaimDAO claimDAO;
     private final AuditDAO auditDAO;
+    private final ProofDAO proofDAO;
 
-    public ApprovalService(ClaimDAO claimDAO, AuditDAO auditDAO) {
+    public ApprovalService(ClaimDAO claimDAO, AuditDAO auditDAO, ProofDAO proofDAO) {
         this.claimDAO = claimDAO;
         this.auditDAO = auditDAO;
+        this.proofDAO = proofDAO;
     }
 
     @Override
     public void approve(Claim claim, Employee approver, String note) throws ReimbursementException {
+        approve(claim, approver, note, false);
+    }
+
+    // proofChecked is the tick the manager gives after opening the attached documents
+    public void approve(Claim claim, Employee approver, String note, boolean proofChecked)
+            throws ReimbursementException {
         checkCanAct(claim, approver);
         claim.checkCanMoveTo(ClaimStatus.APPROVED);
         checkLength(note, "Note");
@@ -40,6 +51,14 @@ public class ApprovalService implements Approvable {
             if (managerApproved) {
                 throw new InvalidClaimStateException("Claim #" + claim.getId()
                         + " is already approved by you and is waiting for finance");
+            }
+            if (!proofDAO.findByClaim(claim.getId()).isEmpty()) {
+                if (!proofChecked) {
+                    throw new ReimbursementException("Open the attached documents and tick Proof checked "
+                            + "before approving claim #" + claim.getId());
+                }
+                claim.setProofChecked(true);
+                claimDAO.update(claim);
             }
             if (needsFinance(claim)) {
                 auditDAO.save(new AuditEntry(claim.getId(), approver.getId(),
@@ -78,12 +97,15 @@ public class ApprovalService implements Approvable {
         if (claim.getEmployee().getId() == actor.getId()) {
             throw new SelfApprovalException("You cannot reimburse your own claim");
         }
+        checkOrganization(claim, actor);
         moveTo(claim, actor, ClaimStatus.REIMBURSED, "Reimbursed");
     }
 
-    public Claim findClaim(int claimId) throws ReimbursementException {
-        return claimDAO.findById(claimId)
+    public Claim findClaim(int claimId, Employee viewer) throws ReimbursementException {
+        Claim claim = claimDAO.findById(claimId)
                 .orElseThrow(() -> new ReimbursementException("Claim #" + claimId + " was not found"));
+        checkOrganization(claim, viewer);
+        return claim;
     }
 
     public List<Claim> findPendingFor(Employee approver) throws DataAccessException {
@@ -96,17 +118,36 @@ public class ApprovalService implements Approvable {
         return pending;
     }
 
-    public List<Claim> findReadyToReimburse() throws DataAccessException {
-        return claimDAO.findByStatus(ClaimStatus.APPROVED);
+    public List<Claim> findReadyToReimburse(Employee viewer) throws DataAccessException {
+        List<Claim> ready = new ArrayList<>();
+        if (viewer.getRole() == Role.FINANCE) {
+            for (Claim claim : claimDAO.findByStatus(ClaimStatus.APPROVED)) {
+                if (claim.getEmployee().isUniversity() == viewer.isUniversity()) {
+                    ready.add(claim);
+                }
+            }
+        }
+        return ready;
     }
 
     public boolean needsFinance(Claim claim) {
         return claim.getAmount().compareTo(FINANCE_THRESHOLD) > 0;
     }
 
+    // Ids of claims the manager has approved that still wait for finance
+    public Set<Integer> findWaitingForFinance(List<Claim> claims) throws DataAccessException {
+        Set<Integer> ids = new HashSet<>();
+        for (Claim claim : claims) {
+            if (claim.getStatus() == ClaimStatus.SUBMITTED && isManagerApproved(claim)) {
+                ids.add(claim.getId());
+            }
+        }
+        return ids;
+    }
+
     private boolean isWaitingFor(Claim claim, Employee approver) throws DataAccessException {
         Employee owner = claim.getEmployee();
-        if (owner.getId() == approver.getId()) {
+        if (owner.getId() == approver.getId() || owner.isUniversity() != approver.isUniversity()) {
             return false;
         }
         if (approver.getRole() == Role.MANAGER) {
@@ -119,6 +160,7 @@ public class ApprovalService implements Approvable {
     }
 
     private void checkCanAct(Claim claim, Employee approver) throws ReimbursementException {
+        checkOrganization(claim, approver);
         Employee owner = claim.getEmployee();
         if (owner.getId() == approver.getId()) {
             throw new SelfApprovalException("You cannot approve or reject your own claim");
@@ -126,6 +168,12 @@ public class ApprovalService implements Approvable {
         if (!isManagerOf(approver, owner) && approver.getRole() != Role.FINANCE) {
             throw new UnauthorizedActionException("Only " + owner.getName()
                     + "'s manager or finance can act on this claim");
+        }
+    }
+
+    private void checkOrganization(Claim claim, Employee viewer) throws UnauthorizedActionException {
+        if (claim.getEmployee().isUniversity() != viewer.isUniversity()) {
+            throw new UnauthorizedActionException("This claim belongs to another organization");
         }
     }
 

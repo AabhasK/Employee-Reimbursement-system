@@ -1,0 +1,20 @@
+Expense Claim Summary
+Generated on 17 Nov 2026 23:53 by Neha Kapoor (FINANCE)
+Sorted by: By status
+
+Status        Count     Total (Rs)
+SUBMITTED         4       24800.00
+APPROVED          1        4300.00
+REJECTED          1        1800.00
+REIMBURSED        2        1950.00
+All               8       32850.00
+
+ID    Employee         Type           Amount Expense date Status     
+72    Arjun Singh      TRAVEL        7200.00 2026-11-05   SUBMITTED  
+73    Arjun Singh      MEDICAL       3200.00 2026-11-12   SUBMITTED  
+75    Simran Kaur      TRAVEL        2400.00 2026-11-15   SUBMITTED  
+77    Karan Verma      MEDICAL      12000.00 2026-11-11   SUBMITTED  
+76    Simran Kaur      TRAVEL        4300.00 2026-11-09   APPROVED   
+74    Arjun Singh      FOOD          1800.00 2026-11-14   REJECTED   
+71    Arjun Singh      FOOD           450.00 2026-10-28   REIMBURSED 
+83    Arjun Singh      TRAVEL        1500.00 2026-11-17   REIMBURSED 

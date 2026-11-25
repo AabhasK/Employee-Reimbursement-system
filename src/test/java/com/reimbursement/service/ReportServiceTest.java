@@ -117,6 +117,22 @@ class ReportServiceTest {
     }
 
     @Test
+    void percentsShareTheWholeAmount() {
+        Map<ClaimStatus, Integer> percents =
+                reportService.percentByStatus(reportService.totalByStatus(List.of(small, big, other)));
+        assertEquals(3, percents.get(ClaimStatus.SUBMITTED));
+        assertEquals(86, percents.get(ClaimStatus.APPROVED));
+        assertEquals(11, percents.get(ClaimStatus.REIMBURSED));
+        assertEquals(0, percents.get(ClaimStatus.REJECTED));
+    }
+
+    @Test
+    void percentsAreZeroWithNoClaims() {
+        Map<ClaimStatus, Integer> percents = reportService.percentByStatus(reportService.totalByStatus(List.of()));
+        assertEquals(0, percents.get(ClaimStatus.APPROVED));
+    }
+
+    @Test
     void exportWritesSummaryFile(@TempDir Path folder) throws DataAccessException, IOException {
         File file = reportService.export(neha, ReportSort.AMOUNT_HIGH_FIRST, folder.toFile());
 

@@ -2,6 +2,7 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/layout :: head('Team approvals')}"></head>
 <body>
+<svg th:replace="~{fragments/layout :: icons}"></svg>
 <div class="app">
     <aside th:replace="~{fragments/layout :: sidebar('manager')}"></aside>
 
@@ -17,6 +18,19 @@
 
         <div th:replace="~{fragments/layout :: messages}"></div>
 
+        <section class="summary" style="--cols: 2" aria-label="Waiting for you">
+            <div>
+                <div class="label"><span class="dot SUBMITTED"></span>Waiting for you</div>
+                <div class="money" th:text="${#lists.size(pending)}">0</div>
+                <div class="sub" th:text="${#lists.size(pending) == 1} ? 'claim' : 'claims'">claims</div>
+            </div>
+            <div>
+                <div class="label">Total amount</div>
+                <div class="money" th:text="'₹' + ${#numbers.formatDecimal(pendingTotal, 1, 'COMMA', 2, 'POINT')}">₹0.00</div>
+                <div class="sub">across these claims</div>
+            </div>
+        </section>
+
         <section class="panel">
             <div class="panel-head">
                 <h2>Waiting for you</h2>
@@ -24,6 +38,7 @@
             </div>
 
             <div th:if="${#lists.isEmpty(pending)}" class="empty">
+                <svg class="icon"><use href="#i-check"/></svg>
                 <strong>You are all caught up</strong>
                 New claims from your team will appear here.
             </div>
@@ -38,10 +53,11 @@
                     </thead>
                     <tbody>
                     <tr th:each="claim : ${pending}">
-                        <th:block th:replace="~{fragments/claims :: cells(${claim})}"></th:block>
+                        <th:block th:replace="~{fragments/claims :: cells(${claim}, ${proofs != null ? proofs.get(claim.id) : null})}"></th:block>
                         <td>
-                            <span th:if="${claim.amount.compareTo(financeThreshold) > 0}" class="tag">Goes to finance after you</span>
-                            <form th:replace="~{fragments/claims :: decision(${claim}, '/manager')}"></form>
+                            <span th:if="${claim.amount.compareTo(financeThreshold) > 0}" class="tag">
+                                <svg class="icon"><use href="#i-arrow"/></svg>Goes to finance after you</span>
+                            <form th:replace="~{fragments/claims :: decision(${claim}, '/manager', ${proofs != null ? proofs.get(claim.id) : null})}"></form>
                         </td>
                     </tr>
                     </tbody>

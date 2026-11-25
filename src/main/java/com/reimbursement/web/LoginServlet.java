@@ -33,13 +33,17 @@ public class LoginServlet extends HttpServlet {
         String email = request.getParameter("email");
         try {
             Employee user = loginService.login(email, request.getParameter("password"));
+            if (!AuthFilter.canSignIn(user)) {
+                throw new ReimbursementException("Wrong email or password");
+            }
 
             // Fresh session after login, so a session id seen before login is useless
             HttpSession oldSession = request.getSession(false);
             if (oldSession != null) {
                 oldSession.invalidate();
             }
-            request.getSession(true).setAttribute(AuthFilter.USER, user);
+            HttpSession session = request.getSession(true);
+            session.setAttribute(AuthFilter.USER, user);
             response.sendRedirect(request.getContextPath() + AuthFilter.homeFor(user.getRole()));
         } catch (ReimbursementException e) {
             request.setAttribute("error", Messages.describe(e));

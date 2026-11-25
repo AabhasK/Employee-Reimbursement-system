@@ -21,5 +21,5 @@ public interface ClaimDAO {
 
     List<Claim> findAll() throws DataAccessException;
 
-    boolean isReceiptUsed(String receiptNo, int ignoreClaimId) throws DataAccessException;
+    boolean isReceiptUsed(String receiptNo, int ignoreClaimId, boolean university) throws DataAccessException;
 }

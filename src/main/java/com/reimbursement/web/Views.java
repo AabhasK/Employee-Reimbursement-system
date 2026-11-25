@@ -8,6 +8,9 @@ import org.thymeleaf.templatemode.TemplateMode;
 import org.thymeleaf.templateresolver.WebApplicationTemplateResolver;
 import org.thymeleaf.web.servlet.JakartaServletWebApplication;
 
+import com.reimbursement.util.Company;
+import com.reimbursement.model.Employee;
+
 import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
 import jakarta.servlet.annotation.WebListener;
@@ -43,9 +46,18 @@ public class Views implements ServletContextListener {
     public static void render(String template, HttpServletRequest request, HttpServletResponse response)
             throws IOException {
         WebContext context = new WebContext(application.buildExchange(request, response), request.getLocale());
-        context.setVariable("currentUser", AuthFilter.userOf(request));
+        Employee user = AuthFilter.userOf(request);
+        context.setVariable("currentUser", user);
+        context.setVariable("demoEnabled", Company.demoEnabled());
+        context.setVariable("companyName", Company.getName());
+        context.setVariable("companyLogo", Company.getLogo());
+        context.setVariable("universityName", Company.getUniversityName());
+        context.setVariable("universityLogo", Company.getUniversityLogo());
 
         HttpSession session = request.getSession(false);
+        boolean university = user != null && user.isUniversity();
+        context.setVariable("brandName", university ? Company.getUniversityName() : Company.getName());
+        context.setVariable("brandLogo", university ? Company.getUniversityLogo() : Company.getLogo());
         if (session != null) {
             moveFlash(session, context, FLASH);
             moveFlash(session, context, FLASH_ERROR);

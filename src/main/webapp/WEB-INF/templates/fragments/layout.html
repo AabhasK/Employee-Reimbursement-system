@@ -13,48 +13,156 @@
 
 <body>
 
+<!-- Line icons, drawn once and reused with <use href="#i-name"> -->
+<svg th:fragment="icons" xmlns="http://www.w3.org/2000/svg" style="display: none" aria-hidden="true">
+    <symbol id="i-receipt" viewBox="0 0 24 24">
+        <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/>
+        <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/>
+        <path d="M12 17.5v-11"/>
+    </symbol>
+    <symbol id="i-approve" viewBox="0 0 24 24">
+        <rect width="8" height="4" x="8" y="2" rx="1"/>
+        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+        <path d="m9 14 2 2 4-4"/>
+    </symbol>
+    <symbol id="i-wallet" viewBox="0 0 24 24">
+        <path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/>
+        <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>
+    </symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24">
+        <path d="M3 3v18h18"/>
+        <path d="M18 17V9"/>
+        <path d="M13 17V5"/>
+        <path d="M8 17v-3"/>
+    </symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+        <path d="m16 17 5-5-5-5"/>
+        <path d="M21 12H9"/>
+    </symbol>
+    <symbol id="i-check" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="m9 12 2 2 4-4"/>
+    </symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M12 8v4"/>
+        <path d="M12 16h.01"/>
+    </symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24">
+        <path d="M5 12h14"/>
+        <path d="M12 5v14"/>
+    </symbol>
+    <symbol id="i-download" viewBox="0 0 24 24">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <path d="m7 10 5 5 5-5"/>
+        <path d="M12 15V3"/>
+    </symbol>
+    <symbol id="i-inbox" viewBox="0 0 24 24">
+        <path d="M22 12h-6l-2 3h-4l-2-3H2"/>
+        <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
+    </symbol>
+    <symbol id="i-file" viewBox="0 0 24 24">
+        <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/>
+        <path d="M14 2v4a2 2 0 0 0 2 2h4"/>
+    </symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24">
+        <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
+        <path d="m9 12 2 2 4-4"/>
+    </symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <path d="m17 8-5-5-5 5"/>
+        <path d="M12 3v12"/>
+    </symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24">
+        <path d="M5 12h14"/>
+        <path d="m12 5 7 7-7 7"/>
+    </symbol>
+</svg>
+
 <aside th:fragment="sidebar(active)" class="sidebar">
-    <a class="wordmark" th:href="@{/}">
-        <span class="wordmark-mark">EC</span>
-        Expense Claims
+    <a class="brand-block" th:href="@{/}">
+        <img class="company-logo" th:src="@{${brandLogo}}" alt="" width="36" height="36">
+        <span>
+            <span class="company-name" th:text="${brandName}">Company</span>
+            <span class="app-name">Expense Claims</span>
+        </span>
     </a>
+    <div class="nav-label">Menu</div>
     <nav class="side-nav" aria-label="Main">
         <a th:if="${currentUser.role.name() == 'EMPLOYEE'}" th:href="@{/employee}"
-           th:classappend="${active == 'employee'} ? 'active'">My claims</a>
+           th:classappend="${active == 'employee'} ? 'active'">
+            <svg class="icon"><use href="#i-receipt"/></svg>My claims</a>
         <a th:if="${currentUser.role.name() == 'MANAGER'}" th:href="@{/manager}"
-           th:classappend="${active == 'manager'} ? 'active'">Team approvals</a>
+           th:classappend="${active == 'manager'} ? 'active'">
+            <svg class="icon"><use href="#i-approve"/></svg>Team approvals</a>
         <a th:if="${currentUser.role.name() == 'FINANCE'}" th:href="@{/finance}"
-           th:classappend="${active == 'finance'} ? 'active'">Approvals and payments</a>
+           th:classappend="${active == 'finance'} ? 'active'">
+            <svg class="icon"><use href="#i-wallet"/></svg>Approvals and payments</a>
         <a th:if="${currentUser.role.name() != 'EMPLOYEE'}" th:href="@{/reports}"
-           th:classappend="${active == 'reports'} ? 'active'">Reports</a>
+           th:classappend="${active == 'reports'} ? 'active'">
+            <svg class="icon"><use href="#i-chart"/></svg>Reports</a>
     </nav>
     <div class="user-card">
-        <div>
+        <span class="avatar" th:text="${currentUser.initials}">AS</span>
+        <div class="user-text">
             <div class="name" th:text="${currentUser.name}">Name</div>
-            <div class="role" th:text="${currentUser.role.name() == 'EMPLOYEE'} ? 'Employee'
-                    : (${currentUser.role.name() == 'MANAGER'} ? 'Manager' : 'Finance')">Employee</div>
+            <div class="role" th:text="${currentUser.role.name() == 'EMPLOYEE'}
+                    ? (${currentUser.grade.name() == 'STUDENT'} ? 'Student' : 'Staff')
+                    : (${currentUser.role.name() == 'MANAGER'} ? 'Manager' : 'Finance')">Staff</div>
         </div>
         <form method="post" th:action="@{/logout}">
-            <button type="submit" class="signout">Sign out</button>
+            <button type="submit" class="signout" title="Sign out" aria-label="Sign out">
+                <svg class="icon"><use href="#i-logout"/></svg>
+            </button>
         </form>
     </div>
 </aside>
 
 <div th:fragment="messages">
-    <p th:if="${flash}" class="message success" role="status" th:text="${flash}">Saved</p>
-    <p th:if="${flashError}" class="message error" role="alert" th:text="${flashError}">Problem</p>
-    <p th:if="${error}" class="message error" role="alert" th:text="${error}">Problem</p>
+    <p th:if="${flash}" class="message success" role="status">
+        <svg class="icon"><use href="#i-check"/></svg><span th:text="${flash}">Saved</span>
+    </p>
+    <p th:if="${flashError}" class="message error" role="alert">
+        <svg class="icon"><use href="#i-alert"/></svg><span th:text="${flashError}">Problem</span>
+    </p>
+    <p th:if="${error}" class="message error" role="alert">
+        <svg class="icon"><use href="#i-alert"/></svg><span th:text="${error}">Problem</span>
+    </p>
 </div>
 
-<span th:fragment="track(status)" class="track" th:classappend="${status}">
+<!-- Progress of one claim. withFinance is true when the manager approved and finance has not -->
+<span th:fragment="track(status, withFinance)" class="track"
+      th:classappend="${withFinance} ? 'FINANCE' : ${status}">
     <span class="track-bar" aria-hidden="true"><i></i><i></i><i></i></span>
-    <span class="track-label" th:switch="${status.name()}">
-        <th:block th:case="'SUBMITTED'">Waiting for approval</th:block>
+    <span class="track-label" th:if="${withFinance}">With finance</span>
+    <span class="track-label" th:unless="${withFinance}" th:switch="${status.name()}">
+        <th:block th:case="'SUBMITTED'">Waiting for manager</th:block>
         <th:block th:case="'APPROVED'">Approved, not paid</th:block>
         <th:block th:case="'REIMBURSED'">Paid</th:block>
         <th:block th:case="'REJECTED'">Rejected</th:block>
     </span>
 </span>
+
+<!-- Count and total for each status. EnumMap keeps the lifecycle order -->
+<section th:fragment="summary(counts, totals)" class="summary" aria-label="Totals by status">
+    <div th:each="entry : ${counts}">
+        <div class="label">
+            <span class="dot" th:classappend="${entry.key}"></span>
+            <th:block th:switch="${entry.key.name()}">
+                <th:block th:case="'SUBMITTED'">Waiting</th:block>
+                <th:block th:case="'APPROVED'">Approved, not paid</th:block>
+                <th:block th:case="'REJECTED'">Rejected</th:block>
+                <th:block th:case="'REIMBURSED'">Paid</th:block>
+            </th:block>
+        </div>
+        <div class="money" th:text="'₹' + ${#numbers.formatDecimal(totals.get(entry.key), 1, 'COMMA', 2, 'POINT')}">₹0.00</div>
+        <div class="sub" th:text="${entry.value} + (${entry.value == 1} ? ' claim' : ' claims')">0 claims</div>
+    </div>
+</section>
+
+<span th:fragment="typeTag(claim)" class="type-tag" th:classappend="${claim.type}" th:text="${claim.typeName}">Travel</span>
 
 </body>
 </html>

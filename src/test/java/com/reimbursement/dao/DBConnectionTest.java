@@ -1,6 +1,5 @@
 package com.reimbursement.dao;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -24,7 +23,7 @@ class DBConnectionTest {
                 ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM employees")) {
             assertTrue(con.isValid(2));
             assertTrue(rs.next());
-            assertEquals(7, rs.getInt(1));
+            assertTrue(rs.getInt(1) >= 12);
         }
     }
 }

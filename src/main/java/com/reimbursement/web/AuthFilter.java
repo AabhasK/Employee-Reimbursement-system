@@ -7,6 +7,8 @@ import java.util.Set;
 
 import com.reimbursement.model.Employee;
 import com.reimbursement.model.Role;
+import com.reimbursement.util.Company;
+import com.reimbursement.util.Passwords;
 
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
@@ -56,7 +58,8 @@ public class AuthFilter implements Filter {
     }
 
     static boolean isPublic(String path) {
-        return path.equals("/login") || path.startsWith("/css/") || path.equals("/favicon.ico");
+        return path.equals("/login") || path.equals("/signup") || path.startsWith("/css/") || path.startsWith("/images/")
+                || path.equals("/favicon.ico");
     }
 
     static boolean canOpen(Role role, String path) {
@@ -82,7 +85,12 @@ public class AuthFilter implements Filter {
         if (session == null) {
             return null;
         }
-        return (Employee) session.getAttribute(USER);
+        Employee user = (Employee) session.getAttribute(USER);
+        return user != null && canSignIn(user) ? user : null;
+    }
+
+    static boolean canSignIn(Employee user) {
+        return Company.demoEnabled() || (user.isUniversity() && Passwords.isModern(user.getPasswordHash()));
     }
 
     private static String pathOf(HttpServletRequest request) {

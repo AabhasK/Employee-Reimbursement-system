@@ -3,12 +3,14 @@ package com.reimbursement.service;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import com.reimbursement.dao.ClaimDAO;
 import com.reimbursement.exception.DataAccessException;
@@ -31,16 +33,15 @@ public class ReportService {
     }
 
     public List<Claim> findClaimsFor(Employee viewer) throws DataAccessException {
-        if (viewer.getRole() == Role.FINANCE) {
-            return claimDAO.findAll();
-        }
         if (viewer.getRole() == Role.EMPLOYEE) {
             return claimDAO.findByEmployee(viewer.getId());
         }
         List<Claim> team = new ArrayList<>();
         for (Claim claim : claimDAO.findAll()) {
-            Integer managerId = claim.getEmployee().getManagerId();
-            if (managerId != null && managerId == viewer.getId()) {
+            Employee owner = claim.getEmployee();
+            Integer managerId = owner.getManagerId();
+            if (owner.isUniversity() == viewer.isUniversity()
+                    && (viewer.getRole() == Role.FINANCE || (managerId != null && managerId == viewer.getId()))) {
                 team.add(claim);
             }
         }
@@ -75,12 +76,36 @@ public class ReportService {
         return totals;
     }
 
+    public BigDecimal totalOf(List<Claim> claims) {
+        BigDecimal total = BigDecimal.ZERO;
+        for (Claim claim : claims) {
+            total = total.add(claim.getAmount());
+        }
+        return total;
+    }
+
+    // Share of the overall amount for each status, as a whole percent, for the bar chart
+    public Map<ClaimStatus, Integer> percentByStatus(Map<ClaimStatus, BigDecimal> totals) {
+        BigDecimal all = BigDecimal.ZERO;
+        for (BigDecimal amount : totals.values()) {
+            all = all.add(amount);
+        }
+        Map<ClaimStatus, Integer> percents = new EnumMap<>(ClaimStatus.class);
+        for (Map.Entry<ClaimStatus, BigDecimal> entry : totals.entrySet()) {
+            int percent = 0;
+            if (all.signum() > 0) {
+                percent = entry.getValue().multiply(BigDecimal.valueOf(100)).divide(all, 0, RoundingMode.HALF_UP).intValue();
+            }
+            percents.put(entry.getKey(), percent);
+        }
+        return percents;
+    }
+
     public File export(Employee viewer, ReportSort sort, File folder) throws DataAccessException, IOException {
         List<Claim> claims = sort(findClaimsFor(viewer), sort);
-        if (!folder.exists() && !folder.mkdirs()) {
-            throw new IOException("Could not create folder " + folder.getAbsolutePath());
-        }
-        File file = new File(folder, "claim-summary-" + LocalDateTime.now().format(FILE_STAMP) + ".txt");
+        java.nio.file.Files.createDirectories(folder.toPath());
+        String stamp = LocalDateTime.now().format(FILE_STAMP);
+        File file = new File(folder, "claim-summary-" + stamp + "-" + UUID.randomUUID() + ".txt");
         reportWriter.write(file, viewer, sort.toString(), claims, countByStatus(claims), totalByStatus(claims));
         return file;
     }

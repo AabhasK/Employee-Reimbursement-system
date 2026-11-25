@@ -15,28 +15,54 @@
     </thead>
     <tbody>
     <tr>
-        <th:block th:fragment="cells(claim)">
+        <th:block th:fragment="cells(claim, docs)">
             <td class="claim-col">
-                <span th:text="|#${claim.id} ${claim.typeName}|">#1 Travel</span>
+                <span class="claim-title">
+                    <span th:replace="~{fragments/layout :: typeTag(${claim})}"></span>
+                    <span class="claim-id" th:text="|#${claim.id}|">#1</span>
+                </span>
                 <span class="sub" th:text="${claim.description}">Cab</span>
                 <span class="sub" th:if="${claim.receiptNo}" th:text="|Receipt ${claim.receiptNo}|">Receipt R1</span>
+                <span th:replace="~{fragments/claims :: docList(${claim}, ${docs})}"></span>
             </td>
             <td>
-                <span th:text="${claim.employee.name}">Arjun Singh</span>
-                <span class="sub" th:text="|Sent ${#temporals.format(claim.submittedAt, 'dd MMM, HH:mm')}|">Sent 01 Nov</span>
-                <span class="sub" th:if="${claim.resubmitCount > 0}" th:text="|Resent ${claim.resubmitCount}x|">Resent</span>
+                <span class="person">
+                    <span class="avatar small" th:text="${claim.employee.initials}">AS</span>
+                    <span>
+                        <span th:text="${claim.employee.name}">Arjun Singh</span>
+                        <span class="sub" th:text="${claim.employee.grade.name() == 'STUDENT'} ? 'Student' : 'Staff'">Staff</span>
+                        <span class="sub" th:if="${claim.resubmitCount > 0}" th:text="|Sent again ${claim.resubmitCount}x|">Resent</span>
+                    </span>
+                </span>
             </td>
-            <td class="date" th:text="${#temporals.format(claim.expenseDate, 'dd MMM yyyy')}">01 Nov 2026</td>
+            <td class="date">
+                <span th:text="${#temporals.format(claim.expenseDate, 'dd MMM yyyy')}">01 Nov 2026</span>
+                <span class="sub" th:text="|Sent ${#temporals.format(claim.submittedAt, 'dd MMM')}|">Sent 01 Nov</span>
+            </td>
             <td class="num amount-cell" th:text="${#numbers.formatDecimal(claim.amount, 1, 'COMMA', 2, 'POINT')}">0.00</td>
         </th:block>
     </tr>
     </tbody>
 </table>
 
-<form th:fragment="decision(claim, path)" method="post" th:action="@{${path}}" class="decision">
+<!-- Uploaded documents of one claim, each opens in a new tab -->
+<span th:fragment="docList(claim, docs)" class="docs">
+    <a th:each="doc : ${docs}" class="doc-chip" th:href="@{/proof(id=${doc.id})}" target="_blank" rel="noopener"
+       th:title="|${doc.originalName}, ${doc.sizeLabel}|">
+        <svg class="icon"><use href="#i-file"/></svg><span th:text="${doc.kind.label}">Ticket</span>
+    </a>
+    <span th:if="${claim.proofChecked}" class="doc-checked">
+        <svg class="icon"><use href="#i-shield"/></svg>Proof checked</span>
+    <span th:if="${claim.needsProof() and (docs == null or docs.isEmpty())}" class="doc-missing">No document attached</span>
+</span>
+
+<form th:fragment="decision(claim, path, docs)" method="post" th:action="@{${path}}" class="decision">
     <input type="hidden" name="claimId" th:value="${claim.id}">
     <input type="text" name="note" maxlength="255" placeholder="Note (needed to reject)"
            th:attr="aria-label=|Note for claim ${claim.id}|">
+    <label th:if="${path == '/manager' and docs != null and !docs.isEmpty()}" class="tick">
+        <input type="checkbox" name="proofChecked">Proof checked
+    </label>
     <button type="submit" name="action" value="approve" class="button small">Approve</button>
     <button type="submit" name="action" value="reject" class="button small reject">Reject</button>
 </form>

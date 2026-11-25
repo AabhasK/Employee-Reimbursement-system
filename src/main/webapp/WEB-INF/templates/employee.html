@@ -2,18 +2,21 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/layout :: head('My claims')}"></head>
 <body>
+<svg th:replace="~{fragments/layout :: icons}"></svg>
 <div class="app">
     <aside th:replace="~{fragments/layout :: sidebar('employee')}"></aside>
 
     <main class="main">
         <div class="page-head">
             <div>
-                <h1>My claims</h1>
-                <p>Track each claim from submission to payment. Fix a rejected claim and send it again.</p>
+                <h1 th:text="|Hello, ${currentUser.name.split(' ')[0]}|">Hello</h1>
+                <p>Track each claim from submission to payment.</p>
             </div>
         </div>
 
         <div th:replace="~{fragments/layout :: messages}"></div>
+
+        <section th:replace="~{fragments/layout :: summary(${counts}, ${totals})}"></section>
 
         <div class="split">
             <section class="panel">
@@ -23,6 +26,7 @@
                 </div>
 
                 <div th:if="${#lists.isEmpty(claims)}" class="empty">
+                    <svg class="icon"><use href="#i-inbox"/></svg>
                     <strong>No claims yet</strong>
                     Use the form to submit your first expense.
                 </div>
@@ -40,14 +44,18 @@
                         <tbody>
                         <tr th:each="claim : ${claims}">
                             <td class="claim-col">
-                                <span th:text="|#${claim.id} ${claim.typeName}|">#1 Travel</span>
+                                <span class="claim-title">
+                                    <span th:replace="~{fragments/layout :: typeTag(${claim})}"></span>
+                                    <span class="claim-id" th:text="|#${claim.id}|">#1</span>
+                                </span>
                                 <span class="sub" th:text="${claim.description}">Cab to client office</span>
                                 <span class="sub" th:if="${claim.receiptNo}" th:text="|Receipt ${claim.receiptNo}|">Receipt R1</span>
+                                <span th:replace="~{fragments/claims :: docList(${claim}, ${proofs.get(claim.id)})}"></span>
                             </td>
                             <td class="date" th:text="${#temporals.format(claim.expenseDate, 'dd MMM yyyy')}">01 Nov 2026</td>
                             <td class="num amount-cell" th:text="${#numbers.formatDecimal(claim.amount, 1, 'COMMA', 2, 'POINT')}">0.00</td>
                             <td>
-                                <span th:replace="~{fragments/layout :: track(${claim.status})}"></span>
+                                <span th:replace="~{fragments/layout :: track(${claim.status}, ${withFinance.contains(claim.id)})}"></span>
                                 <span class="sub" th:if="${claim.rejectReason}" th:text="${claim.rejectReason}">Reason</span>
                                 <span class="sub" th:if="${claim.resubmitCount > 0}"
                                       th:text="|Sent again ${claim.resubmitCount} time${claim.resubmitCount > 1 ? 's' : ''}|">Sent again</span>
@@ -60,24 +68,24 @@
                 </div>
             </section>
 
-            <section class="panel form-panel">
+            <section class="panel form-panel" id="new-claim">
                 <div class="panel-head">
-                    <h2 th:text="${form.editing} ? |Fix claim #${form.claimId}| : 'New claim'">New claim</h2>
+                    <h2 th:text="${form.editing} ? |Fix claim #${form.claimId}| : (${currentUser.isUniversity()} ? 'New student claim' : 'New company claim')">New claim</h2>
                 </div>
                 <div class="panel-body">
                     <p th:if="${rejectReason}" class="reject-note" th:text="|Rejected: ${rejectReason}|">Rejected</p>
 
-                    <form method="post" th:action="@{/employee}">
+                    <form method="post" th:action="@{/employee}" enctype="multipart/form-data">
                         <input type="hidden" name="claimId" th:value="${form.claimId}">
 
                         <div class="field">
                             <label for="type">Expense type</label>
                             <select id="type" name="type" th:disabled="${form.editing}">
-                                <option th:each="t : ${types}" th:value="${t}"
-                                        th:text="${t.charAt(0) + t.substring(1).toLowerCase()}"
-                                        th:selected="${t == form.type}">Travel</option>
+                                <option th:each="t : ${types}" th:value="${t.type}" th:text="${t.formName}"
+                                        th:attr="data-proof-above=${t.proofAbove},data-kind=${t.receiptKind.name()},data-label=${t.receiptKind.label},data-letter=${t.allowsApprovalLetter()}"
+                                        th:selected="${t.type == form.type}">Inter-city travel</option>
                             </select>
-                            <input th:if="${form.editing}" type="hidden" name="type" th:value="${form.type}">
+                            <input th:if="${editingType != null}" type="hidden" name="type" th:value="${editingType}">
                         </div>
 
                         <div class="row-2">
@@ -93,36 +101,80 @@
                             </div>
                         </div>
 
-                        <div class="field">
-                            <label for="receiptNo">Receipt number</label>
-                            <input id="receiptNo" name="receiptNo" type="text" maxlength="50" th:value="${form.receiptNo}">
+                        <div class="field" id="receipt-number">
+                            <label for="receiptNo">Receipt or ticket number (required)</label>
+                            <input id="receiptNo" name="receiptNo" type="text" maxlength="50"
+                                   th:value="${form.receiptNo}">
                         </div>
 
                         <div class="field">
                             <label for="description">What was it for?</label>
                             <input id="description" name="description" type="text" maxlength="255"
-                                   placeholder="Cab to client office" th:value="${form.description}">
+                                       th:placeholder="${currentUser.isUniversity()} ? 'Train to Delhi for a student event' : 'Taxi to a client meeting'"
+                                       th:value="${form.description}">
                         </div>
 
+                        <p id="proof-rule" class="hint" aria-live="polite"></p>
+                        <fieldset class="field uploads" id="proof-fields" th:attr="data-max=${maxProofs}">
+                            <legend>Proof documents</legend>
+                            <div th:if="${attached != null and !attached.isEmpty()}" class="attached">
+                                <span class="hint">Already attached</span>
+                                <a th:each="doc : ${attached}" class="doc-chip" th:href="@{/proof(id=${doc.id})}"
+                                   th:attr="data-kind=${doc.kind.name()}"
+                                   target="_blank" rel="noopener">
+                                    <svg class="icon"><use href="#i-file"/></svg><span th:text="${doc.kind.label}">Ticket</span>
+                                </a>
+                            </div>
+                            <div class="upload-row" id="receipt-upload">
+                                <label for="proof1">Receipt document (required)</label>
+                                <input type="hidden" name="kind1" value="OTHER">
+                                <input type="file" id="proof1" name="proof1" accept=".pdf,.jpg,.jpeg,.png,.webp">
+                            </div>
+                            <div class="upload-row" id="letter-upload" hidden>
+                                <label for="proof2">HoD or Dean approval letter (optional)</label>
+                                <input type="hidden" name="kind2" value="APPROVAL_LETTER" disabled>
+                                <input type="file" id="proof2" name="proof2" accept=".pdf,.jpg,.jpeg,.png,.webp" disabled>
+                            </div>
+                            <span class="hint" id="proof-formats">PDF or photo, up to 5 MB per file.</span>
+                        </fieldset>
+
                         <div class="actions">
-                            <button type="submit" class="button full"
-                                    th:text="${form.editing} ? 'Send again' : 'Submit claim'">Submit claim</button>
+                            <button type="submit" class="button full">
+                                <svg class="icon" th:unless="${form.editing}"><use href="#i-plus"/></svg>
+                                <span th:text="${form.editing} ? 'Send again' : 'Submit claim'">Submit claim</span>
+                            </button>
                             <a th:if="${form.editing}" th:href="@{/employee}" class="button quiet">Cancel</a>
                         </div>
                     </form>
 
                     <div class="rules">
+                        <p class="rules-title" th:text="${currentUser.isUniversity()} ? 'Student expense limits' : 'Company expense limits'">Expense limits</p>
                         <dl>
-                            <dt>Travel</dt><dd>Up to ₹25,000. Receipt above ₹1,000.</dd>
-                            <dt>Medical</dt><dd>Up to ₹50,000. Receipt always.</dd>
-                            <dt>Food</dt><dd>Up to ₹2,000. Receipt above ₹500.</dd>
-                            <dt>Date</dt><dd>Within the last 60 days.</dd>
+                            <th:block th:each="t : ${rules}">
+                                <dt th:text="${t.formName}">Expense type</dt>
+                                <dd>
+                                    <span th:text="|₹${#numbers.formatDecimal(t.limit, 1, 'COMMA', 0, 'POINT')}.|"></span>
+                                    <span th:if="${t.type == 'TRAVEL'}"
+                                          th:text="${currentUser.grade.name() == 'STUDENT'} ? 'Sleeper, 3AC or bus.' : 'Train or economy flight.'"></span>
+                                    <span th:if="${t.type == 'ACCOMMODATION'}"
+                                          th:text="${currentUser.grade.name() == 'STUDENT'} ? 'Hostel or shared hotel.' : 'Business hotel.'"></span>
+                                    <span th:if="${t.type == 'LOCAL'}"
+                                          th:text="${currentUser.grade.name() == 'STUDENT'} ? 'Auto, metro or shared cab.' : 'Taxi or app cab.'"></span>
+                                    <span th:if="${t.proofAbove == null}">Daily allowance. No bill needed.</span>
+                                    <span th:if="${t.needsProof()}" th:text="|${t.receiptKind.label} required.|">Receipt required.</span>
+                                    <span th:if="${t.proofAbove != null and !t.needsProof()}"
+                                          th:text="|${t.receiptKind.label} required above ₹${t.proofAbove}.|">Receipt required above ₹200.</span>
+                                    <span th:if="${t.type == 'EQUIPMENT'}">Monitors, mice, keyboards and other work equipment.</span>
+                                </dd>
+                            </th:block>
                         </dl>
+                        <p class="hint">Claims must be within 60 days. Above ₹5,000, finance approves after your manager.</p>
                     </div>
                 </div>
             </section>
         </div>
     </main>
 </div>
+<script th:src="@{/js/claim-proof.js}"></script>
 </body>
 </html>
