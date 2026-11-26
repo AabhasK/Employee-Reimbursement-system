@@ -2,6 +2,10 @@
 
 A Java 21 web app for Company staff and Thapar students to submit expense claims and for managers and finance to process them.
 
+## Demo
+
+[![Watch the 20-second demo showing Company and Thapar claims and finance reports](assets/demo.gif)](assets/demo.mp4)
+
 ## Run locally
 
 You need Java 21, Maven, and MySQL 8. With MySQL running, open a terminal in the project root.
